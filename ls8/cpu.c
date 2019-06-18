@@ -20,7 +20,7 @@ void cpu_load(struct cpu *cpu)
   int address = 0;
 
   for (int i = 0; i < DATA_LEN; i++) {
-    cpu->ram[address++] = data[i];
+    cpu->RAM[address++] = data[i];
   }
 
   // TODO: Replace this with something less hard-coded
@@ -50,9 +50,12 @@ void cpu_run(struct cpu *cpu)
   while (running) {
     // TODO
     // 1. Get the value of the current instruction (in address PC).
+    int PC = cpu->PC;
     // 2. Figure out how many operands this next instruction requires
+    int operandA, operandB = cpu_ram_read(cpu);
     // 3. Get the appropriate value(s) of the operands following this instruction
     // 4. switch() over it to decide on a course of action.
+
     // 5. Do whatever the instruction should do according to the spec.
     // 6. Move the PC to the next instruction.
   }
@@ -64,4 +67,22 @@ void cpu_run(struct cpu *cpu)
 void cpu_init(struct cpu *cpu)
 {
   // TODO: Initialize the PC and other special registers
+  cpu->PC = 0;
+  *cpu->RAM = memset(cpu->RAM, 0, sizeof(cpu->RAM));
+  *cpu->REG = memset(cpu->REG, 0, sizeof(cpu->REG));
+
+}
+
+int cpu_ram_read(struct cpu *cpu) 
+{
+  int curr = cpu->RAM[(cpu->PC)];
+  printf("%d\n here", curr);
+  int operandA = cpu->RAM[(cpu->PC) + 1];
+  int operandB = cpu->RAM[(cpu->PC) + 2];
+  
+}
+
+void  cpu_ram_write(struct cpu *cpu)
+{
+
 }
