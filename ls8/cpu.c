@@ -90,11 +90,8 @@ void cpu_run(struct cpu *cpu)
         exit(1);
         break;
       case MUL:
-        operandA = cpu->RAM[operandA + 1] +  cpu->RAM[operandA + 2];
-        operandB = cpu->RAM[operandB];
-        printf("%d A\n", cpu->RAM[operandA + 1] +  cpu->RAM[operandA + 2]);
-        printf("%d B\n", operandB);
-
+        operandA = cpu->REG[operandA];
+        operandB = cpu->REG[operandB];
         alu(cpu, MUL, operandA, operandB);
         cpu->PC += num_of_operands +1;
       default:
@@ -112,7 +109,8 @@ void cpu_init(struct cpu *cpu)
   cpu->PC = 0;
   *cpu->RAM = memset(cpu->RAM, 0, sizeof(cpu->RAM));
   *cpu->REG = memset(cpu->REG, 0, sizeof(cpu->REG));
-
+  cpu->REG[7] = 0xF4;
+  cpu->FLAG = 0;
 }
 
 int cpu_ram_read(struct cpu *cpu) 
