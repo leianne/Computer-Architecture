@@ -1,28 +1,36 @@
+#include <stdlib.h>
+#include <stdio.h>
 #include "cpu.h"
 
 #define DATA_LEN 6
 
+
 /**
  * Load the binary bytes from a .ls8 source file into a RAM array
  */
-void cpu_load(struct cpu *cpu)
+void cpu_load(struct cpu *cpu, char *filename)
 {
-  char data[DATA_LEN] = {
-    // From print8.ls8
-    0b10000010, // LDI R0,8
-    0b00000000,
-    0b00001000,
-    0b01000111, // PRN R0
-    0b00000000,
-    0b00000001  // HLT
-  };
-
+  FILE *fp;
+  char fcontent[1024];
   int address = 0;
 
-  for (int i = 0; i < DATA_LEN; i++) {
-    cpu->RAM[address++] = data[i];
-  }
+  fp = fopen(filename , "r");
+  if (fp == NULL) {
+    printf("Cannot find that file\n");
+    exit(1);
+  } 
+  while(fgets(fcontent, 1024, fp) != NULL) {
+    char *endptr;
+    unsigned  char v;
+    v = strtoul(fcontent, &endptr, 2);
 
+    if (endptr == fcontent) {
+      continue;
+    }
+    cpu->RAM[address] = v;
+    address++;
+  };
+  fclose(fp);
   // TODO: Replace this with something less hard-coded
 }
 
@@ -32,10 +40,12 @@ void cpu_load(struct cpu *cpu)
 void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB)
 {
   switch (op) {
-    case ALU_MUL:
+    case MUL:
       // TODO
+      printf("%d\n",  regA  * regB);
       break;
-
+    default:
+      break;
     // TODO: implement more ALU ops
   }
 }
@@ -64,6 +74,8 @@ void cpu_run(struct cpu *cpu)
       operandA = cpu->RAM[(cpu->PC) + 1];
     }
     // 4. switch() over it to decide on a course of action.
+    // 5. Do whatever the instruction should do according to the spec.
+    // 6. Move the PC to the next instruction.
     switch (IR) {
       case LDI:
       /* code */
@@ -77,11 +89,17 @@ void cpu_run(struct cpu *cpu)
       case HLT:
         exit(1);
         break;
+      case MUL:
+        operandA = cpu->RAM[operandA + 1] +  cpu->RAM[operandA + 2];
+        operandB = cpu->RAM[operandB];
+        printf("%d A\n", cpu->RAM[operandA + 1] +  cpu->RAM[operandA + 2]);
+        printf("%d B\n", operandB);
+
+        alu(cpu, MUL, operandA, operandB);
+        cpu->PC += num_of_operands +1;
       default:
         break;
     }
-    // 5. Do whatever the instruction should do according to the spec.
-    // 6. Move the PC to the next instruction.
   }
 }
 
