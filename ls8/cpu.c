@@ -3,7 +3,7 @@
 #include "cpu.h"
 
 #define DATA_LEN 6
-
+#define SP 7
 
 /**
  * Load the binary bytes from a .ls8 source file into a RAM array
@@ -42,7 +42,8 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
   switch (op) {
     case MUL:
       // TODO
-      printf("%d\n",  regA  * regB);
+      regA = regA  * regB;
+      printf("%d\n",  regA);
       break;
     default:
       break;
@@ -59,6 +60,7 @@ void cpu_run(struct cpu *cpu)
   int operandB;  
   int running = 1; // True until we get a HLT instruction
   unsigned char IR;
+  int reg, v;
   while (running) {
     // TODO
     // 1. Get the value of the current instruction (in address PC).
@@ -94,6 +96,21 @@ void cpu_run(struct cpu *cpu)
         operandB = cpu->REG[operandB];
         alu(cpu, MUL, operandA, operandB);
         cpu->PC += num_of_operands +1;
+      case POP:
+        reg = cpu->RAM[cpu->PC + 1];
+        v = cpu->REG[SP];
+        reg = v;
+        cpu->REG[SP]++;
+        cpu->PC += num_of_operands + 1;
+
+        break;
+      case PUSH:
+        cpu->REG[SP]--;
+        reg = cpu->RAM[cpu->PC + 1];
+        v = cpu->REG[reg];
+        cpu->REG[SP] = v;
+        cpu->PC += num_of_operands + 1;
+        break;
       default:
         break;
     }
@@ -109,7 +126,7 @@ void cpu_init(struct cpu *cpu)
   cpu->PC = 0;
   *cpu->RAM = memset(cpu->RAM, 0, sizeof(cpu->RAM));
   *cpu->REG = memset(cpu->REG, 0, sizeof(cpu->REG));
-  cpu->REG[7] = 0xF4;
+  cpu->REG[SP] = 0xF4;
   cpu->FLAG = 0;
 }
 
