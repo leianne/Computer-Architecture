@@ -51,8 +51,10 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
   switch (op) {
     case MUL:
       // TODO
-      regA = regA  * regB;
-      printf("%d\n",  regA);
+      cpu->REG[regA] = cpu->REG[regA]  * cpu->REG[regB];
+      break;
+    case ADD:
+      cpu->REG[regA] = cpu->REG[regA] + cpu->REG[regB];
       break;
     default:
       break;
@@ -76,6 +78,23 @@ void pop(struct cpu *cpu, unsigned char regVal)
   cpu->REG[SP]++;
   cpu->PC += 2;
 }
+
+
+void call(struct cpu *cpu, unsigned char regVal)
+{
+  unsigned char address = cpu->REG[regVal];
+  cpu->REG[SP]--;
+  cpu_ram_write(cpu, cpu->REG[SP], cpu->PC + 2);
+  cpu->PC = address;
+}
+
+void ret(struct cpu *cpu)
+{
+  unsigned char address = cpu_ram_read(cpu, cpu->REG[SP]);  // increment size of stack, because we pop out of it
+  cpu->REG[SP]++;
+  cpu->PC = address;
+}
+
 /**
  * Run the CPU
  */
@@ -108,6 +127,7 @@ void cpu_run(struct cpu *cpu)
     // 6. Move the PC to the next instruction.
     switch (IR) {
       case LDI:
+
       /* code */
         cpu->REG[operandA] = operandB;
         cpu->PC += 3;
@@ -123,13 +143,21 @@ void cpu_run(struct cpu *cpu)
       case MUL:
         alu(cpu, MUL, operandA, operandB);
         cpu->PC += 3;
+      case ADD:
+        alu(cpu, ADD, operandA, operandB);
+        cpu->PC += 3;
+        break;
       case POP:
-
         pop(cpu, operandA);
         break;
       case PUSH:
-
         push(cpu, operandA);
+        break;
+      case CALL:
+        call(cpu, operandA);
+        break;
+      case RET:
+        ret(cpu);
         break;
       default:
         break;
