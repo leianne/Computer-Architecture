@@ -78,7 +78,7 @@ void push(struct cpu *cpu, unsigned char regVal)
 {
   cpu->REG[SP]--;
   unsigned char val = cpu->REG[regVal];
-  cpu_ram_write(cpu, cpu->REG[7], val);
+  cpu_ram_write(cpu, cpu->REG[SP], val);
   cpu->PC += 2;
 }
 
