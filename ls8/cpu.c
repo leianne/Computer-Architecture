@@ -32,7 +32,7 @@ void cpu_load(struct cpu *cpu, char *filename)
   while(fgets(fcontent, 1024, fp) != NULL) {
     char *endptr;
     unsigned  char v;
-    v = strtoul(fcontent, &endptr, 2)& 0xFF;
+    v = strtoul(fcontent, &endptr, 2);
 
     if (endptr == fcontent) {
       continue;
