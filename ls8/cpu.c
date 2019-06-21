@@ -48,6 +48,7 @@ void cpu_load(struct cpu *cpu, char *filename)
  */
 void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB)
 {
+  unsigned char valA, valB;
   switch (op) {
     case MUL:
       // TODO
@@ -55,6 +56,17 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
       break;
     case ADD:
       cpu->REG[regA] = cpu->REG[regA] + cpu->REG[regB];
+      break;
+    case CMP:
+      valA = cpu->REG[regA];
+      valB = cpu->REG[regB];
+      if(valA ==  valB) {
+        cpu->FLAG = E;
+      } else if (valA > valB) {
+        cpu->FLAG = G;
+      } else {
+        cpu->FLAG = L;
+      }
       break;
     default:
       break;
@@ -127,37 +139,84 @@ void cpu_run(struct cpu *cpu)
     // 6. Move the PC to the next instruction.
     switch (IR) {
       case LDI:
-
+        printf("LDI\n");
       /* code */
         cpu->REG[operandA] = operandB;
         cpu->PC += 3;
       break;
       case PRN:
+        printf("PRN\n");
+
         printf("%d\n", cpu->REG[operandA]);
         cpu->PC += 2;
         break;
       case HLT:
+        printf("HLT\n");
+
         running = 0;
         exit(1);
         break;
       case MUL:
+        printf("MUL\n");
+
         alu(cpu, MUL, operandA, operandB);
         cpu->PC += 3;
       case ADD:
+        printf("ADD\n");
+
         alu(cpu, ADD, operandA, operandB);
         cpu->PC += 3;
         break;
       case POP:
+        printf("POP\n");
+
         pop(cpu, operandA);
         break;
       case PUSH:
+        printf("PUSH\n");
+
         push(cpu, operandA);
         break;
       case CALL:
+        printf("CALL\n");
+
         call(cpu, operandA);
         break;
       case RET:
+        printf("RET\n");
+
         ret(cpu);
+        break;
+      case CMP:
+        printf("CMP\n");
+
+        alu(cpu, CMP, operandA, operandB);
+        cpu->PC += 3;
+        break;
+      case JMP:
+        printf("JMP\n");
+
+        v = cpu->REG[operandA];
+        printf("%d",  v);
+        cpu->PC =  v;
+        break;
+      case JEQ:
+        printf("JEQ\n");
+
+        if((cpu->FLAG & E) == E)  {
+          cpu->PC = cpu->REG[operandA];
+        } else {
+          cpu->PC += 2;
+        }
+        break;
+      case JNE:
+        printf("JNE\n");
+
+        if((cpu->FLAG & E) != E) {
+          cpu->PC = cpu->REG[operandA];
+        } else {
+          cpu->PC += 2;
+        }
         break;
       default:
         break;
