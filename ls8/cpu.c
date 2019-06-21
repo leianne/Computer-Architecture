@@ -8,6 +8,16 @@
 /**
  * Load the binary bytes from a .ls8 source file into a RAM array
  */
+int cpu_ram_read(struct cpu *cpu, unsigned char address) 
+{
+  return cpu->RAM[address];
+}
+
+void  cpu_ram_write(struct cpu *cpu, unsigned char address, unsigned char val)
+{
+  cpu->RAM[address] = val;
+}
+
 void cpu_load(struct cpu *cpu, char *filename)
 {
   FILE *fp;
@@ -22,13 +32,12 @@ void cpu_load(struct cpu *cpu, char *filename)
   while(fgets(fcontent, 1024, fp) != NULL) {
     char *endptr;
     unsigned  char v;
-    v = strtoul(fcontent, &endptr, 2);
+    v = strtoul(fcontent, &endptr, 2)& 0xFF;
 
     if (endptr == fcontent) {
       continue;
     }
-    cpu->RAM[address] = v;
-    address++;
+    cpu_ram_write(cpu, address++,  v);
   };
   fclose(fp);
   // TODO: Replace this with something less hard-coded
@@ -51,29 +60,48 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
   }
 }
 
+void push(struct cpu *cpu, unsigned char regVal)
+{
+  cpu->REG[SP]--;
+  unsigned char val = cpu->REG[regVal];
+  cpu_ram_write(cpu, cpu->REG[7], val);
+  cpu->PC += 2;
+}
+
+void pop(struct cpu *cpu, unsigned char regVal)
+{
+
+  unsigned char val = cpu_ram_read(cpu, cpu->REG[SP]);
+  cpu->REG[regVal] = val;
+  cpu->REG[SP]++;
+  cpu->PC += 2;
+}
 /**
  * Run the CPU
  */
 void cpu_run(struct cpu *cpu)
 {
-  int operandA;
-  int operandB;  
+  unsigned  char operandA, operandB;
   int running = 1; // True until we get a HLT instruction
   unsigned char IR;
-  int reg, v;
+  int reg, v, num_of_operands;
+  cpu->REG[SP] = 120;
   while (running) {
     // TODO
     // 1. Get the value of the current instruction (in address PC).
-    int PC = cpu->PC;
-    IR = cpu->RAM[PC];
+    IR = cpu_ram_read(cpu, cpu->PC);
     // 2. Figure out how many operands this next instruction requires
-    int num_of_operands = cpu_ram_read(cpu);
     // 3. Get the appropriate value(s) of the operands following this instruction
-    if ( num_of_operands == 2) {
-      operandA = cpu->RAM[(cpu->PC) + 1];
-      operandB = cpu->RAM[(cpu->PC) + 2];
-    } else if (num_of_operands == 1) {
-      operandA = cpu->RAM[(cpu->PC) + 1];
+    operandA = cpu_ram_read(cpu, cpu->PC + 1);
+    operandB = cpu_ram_read(cpu, cpu->PC + 2);
+
+
+    if(operandA && operandB) {
+      num_of_operands = 2;
+    } else if (operandA ||  operandB){
+      num_of_operands = 1;
+    } else {
+      num_of_operands = 0;
     }
     // 4. switch() over it to decide on a course of action.
     // 5. Do whatever the instruction should do according to the spec.
@@ -82,34 +110,26 @@ void cpu_run(struct cpu *cpu)
       case LDI:
       /* code */
         cpu->REG[operandA] = operandB;
-        cpu->PC += num_of_operands + 1;
+        cpu->PC += 3;
       break;
       case PRN:
         printf("%d\n", cpu->REG[operandA]);
-        cpu->PC += num_of_operands +1;
+        cpu->PC += 2;
         break;
       case HLT:
+        running = 0;
         exit(1);
         break;
       case MUL:
-        operandA = cpu->REG[operandA];
-        operandB = cpu->REG[operandB];
         alu(cpu, MUL, operandA, operandB);
-        cpu->PC += num_of_operands +1;
+        cpu->PC += 3;
       case POP:
-        reg = cpu->RAM[cpu->PC + 1];
-        v = cpu->REG[SP];
-        reg = v;
-        cpu->REG[SP]++;
-        cpu->PC += num_of_operands + 1;
 
+        pop(cpu, operandA);
         break;
       case PUSH:
-        cpu->REG[SP]--;
-        reg = cpu->RAM[cpu->PC + 1];
-        v = cpu->REG[reg];
-        cpu->REG[SP] = v;
-        cpu->PC += num_of_operands + 1;
+
+        push(cpu, operandA);
         break;
       default:
         break;
@@ -128,23 +148,4 @@ void cpu_init(struct cpu *cpu)
   *cpu->REG = memset(cpu->REG, 0, sizeof(cpu->REG));
   cpu->REG[SP] = 0xF4;
   cpu->FLAG = 0;
-}
-
-int cpu_ram_read(struct cpu *cpu) 
-{
-  int curr = cpu->RAM[(cpu->PC)];
-  int operandA = cpu->RAM[(cpu->PC) + 1];
-  int operandB = cpu->RAM[(cpu->PC) + 2];
-  if (curr >= 128) {
-    return 2;
-  } else if (curr >= 64) {
-    return 1;
-  } else {
-    return 0;
-  }
-}
-
-void  cpu_ram_write(struct cpu *cpu)
-{
-
 }
